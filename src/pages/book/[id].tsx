@@ -1,5 +1,7 @@
 // import { useRouter } from "next/router";
+import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
 import style from "./[id].module.css";
+import fetchOneBook from "@/lib/fetch-one-book";
 const mockData = {
   id: 1,
   title: "한 입 크기로 잘라 먹는 리액트",
@@ -10,7 +12,16 @@ const mockData = {
   coverImgUrl: "https://shopping-phinf.pstatic.net/main_3888828/38888282618.20230913071643.jpg",
 };
 
-export default function Page() {
+export const getServerSideProps = async (context: GetServerSidePropsContext) => {
+  // url파라미터가 없을 경우 에러 , !단언으로 처리, 편집 [id].tsx는 무조건 url파라미터가 있어야 하기때문에 안전함.
+  const id = context.params!.id;
+  const book = await fetchOneBook(Number(id));
+  return {
+    props: { book },
+  };
+};
+
+export default function Page({ book }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   // const router = useRouter();
   // const { id } = router.query; // 배열로 저장된다.
 
@@ -20,7 +31,10 @@ export default function Page() {
   // http://localhost:3000/book 이 경로라면 404페이지가 나온다. 이 경우엔?
   // 범용적으로 처리 하고 싶다면 [[...id]].tsx, optional all segment ("/"뒤에 어떤 경로가 오든, 혹은 안오든 모두 대응하는 페이지 )
 
-  const { id, title, subTitle, description, author, publisher, coverImgUrl } = mockData;
+  if (!book) {
+    return "문제가 발생했습니다 다시시도하세요.";
+  }
+  const { id, title, subTitle, description, author, publisher, coverImgUrl } = book;
   return (
     <div className={style.container}>
       <div className={style.cover_img_container} style={{ backgroundImage: `url('${coverImgUrl}')` }}>
